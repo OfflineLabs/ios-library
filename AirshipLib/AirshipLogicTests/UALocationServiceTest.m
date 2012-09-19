@@ -78,7 +78,6 @@
 - (void)setUp {
     // Only works on the first pass, values will change when accessed. When fresh values are needed in 
     // user defaults call the setTestValuesInNSUserDefaults method
-    [UAirship registerNSUserDefaults];
     yes = YES;
     no = NO;
     locationService = [[UALocationService alloc] initWithPurpose:@"TEST"];
@@ -119,14 +118,6 @@
     [userDefaults setValue:[NSNumber numberWithDouble:kCLLocationAccuracyHundredMeters] forKey:UAStandardLocationDistanceFilterKey];
     [userDefaults setValue:[NSNumber numberWithDouble:kCLLocationAccuracyHundredMeters] forKey:UAStandardLocationDesiredAccuracyKey];
 }
-
-//void (^theBlock)(NSInvocation *) = ^(NSInvocation *invocation) 
-//{
-//    NSString *value;
-//    [invocation getArgument:&value atIndex:2];
-//    value = [NSString stringWithFormat:@"MOCK %@", value];
-//    [invocation setReturnValue:&value];
-//};
 
 #pragma mark -
 #pragma mark Getters and Setters

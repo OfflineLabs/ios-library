@@ -30,7 +30,7 @@
     UALocationService *locationService;
     NSDate *timeout;
 }
-//- (BOOL)serviceAcquiredLocation;
+
 - (void)peformInvocationInBackground:(NSInvocation*)invocation;
 @end
 
@@ -140,6 +140,17 @@
     STAssertTrue(type == typeInDate, nil);
 }
 
+- (BOOL)serviceAcquiredLocation {
+    timeout = [[NSDate alloc] initWithTimeIntervalSinceNow:15];
+    while (!locationRecieved) {
+        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+        if ([timeout timeIntervalSinceNow] < 0.0) {
+            break;
+        }
+    }
+    return locationRecieved;
+}
+
 // This test will not run automatically on a clean install
 // as selecting OK for the location permission alert view
 // tanks the run loop update
@@ -153,16 +164,6 @@
     STAssertTrue([self serviceAcquiredLocation], @"Location Service failed to acquire location");
 }
 
-- (BOOL)serviceAcquiredLocation {
-    timeout = [[NSDate alloc] initWithTimeIntervalSinceNow:15];
-    while (!locationRecieved) {
-        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
-        if ([timeout timeIntervalSinceNow] < 0.0) {
-            break;
-        }
-    }
-    return locationRecieved;
-}
 
 #pragma mark -
 #pragma mark Single Location Service Report Current location background
@@ -185,6 +186,7 @@
     STAssertFalse(UIBackgroundTaskInvalid == locationService.singleLocationBackgroundIdentifier, nil);
     NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
     NSString *runMode = [runLoop currentMode];
+    timeout = [[NSDate alloc] initWithTimeIntervalSinceNow:5.0];
     while (locationService.singleLocationBackgroundIdentifier != UIBackgroundTaskInvalid) {
         // Just keep moving the run loop date forward slightly, so the exit is quick
         [[NSRunLoop currentRunLoop] runMode:runMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
@@ -279,5 +281,17 @@
     [pool drain];
 }
 
+- (void)testSignificantChangeNotifiesDelegate {
+    locationService = [[UALocationService alloc] initWithPurpose:@"Test"];
+    CLLocation *pdx = [UALocationTestUtils testLocationPDX];
+    CLLocation *sfo = [UALocationTestUtils testLocationSFO];
+    id mockDelegate = [OCMockObject niceMockForProtocol:@protocol(UALocationServiceDelegate)];
+    [[mockDelegate expect] locationService:locationService didUpdateToLocation:pdx fromLocation:sfo];
+    UASignificantChangeProvider *sigChange = [UASignificantChangeProvider providerWithDelegate:locationService];
+    locationService.significantChangeProvider = sigChange;
+    locationService.delegate = mockDelegate;
+    [sigChange.delegate locationProvider:sigChange withLocationManager:sigChange.locationManager didUpdateLocation:pdx fromLocation:sfo];
+    [mockDelegate verify];
+}
 
 @end

@@ -40,6 +40,7 @@ UIKIT_EXTERN NSString* const UIApplicationDidEnterBackgroundNotification __attri
 @synthesize cellView;
 
 
+
 - (void)dealloc {
     [product removeObserver:self];
     product = nil;
@@ -92,14 +93,6 @@ UIKIT_EXTERN NSString* const UIApplicationDidEnterBackgroundNotification __attri
     cellView.product = nil;
     product = nil;
 }
-
-- (void)prepareForReuse { 
-    product = nil; 
-    cellView.product = nil;
-    
-    [super prepareForReuse]; 
-}
-
 
 - (void)setFrame:(CGRect)frame {
     if (self.frame.size.width != frame.size.width) {

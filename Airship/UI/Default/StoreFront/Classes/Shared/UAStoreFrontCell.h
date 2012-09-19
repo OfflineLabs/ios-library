@@ -34,7 +34,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     UIProgressView *progressView;
     UIActivityIndicatorView *activityView;
 
-    // referenct to product is actually unnecessary
     UAProduct *product;
 
     UAStoreFrontCellView *cellView;

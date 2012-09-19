@@ -11,7 +11,7 @@
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided withthe distribution.
  
- THIS SOFTWARE IS PROVIDED BY THE URBAN AIRSHIP INC ``AS IS'' AND ANY EXPRESS OR
+ THIS SOFTWARE IS PROVIDED BY THE URBAN AIRSHIP INC``AS IS'' AND ANY EXPRESS OR
  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
  EVENT SHALL URBAN AIRSHIP INC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
@@ -23,19 +23,14 @@
  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/Foundation.h>
-#import "GTMSenTestCase.h"
-#import "UAStoreFrontCell.h"
-
-@class UAProduct;
-
-@interface MockedUAProduct : UAProduct
-@end
-
-@interface UAStoreFrontCellTest : GTMTestCase {
-    UAStoreFrontCell *cell;
-    MockedUAProduct *product;
+@interface UAirship() {
+    UALocationService* locationService_;
 }
+/*
+ * Should set this user agent up
+ * [LIB-101] User agent string should be:
+ * App 1.0 (iPad; iPhone OS <version>; UALib <version>; <app key>; en_US)
+ */
+- (void)configureUserAgent;
 
 @end
-

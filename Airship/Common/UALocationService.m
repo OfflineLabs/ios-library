@@ -33,6 +33,9 @@
 #import "UALocationEvent.h"
 #import "UAAnalytics.h"
 
+#define kUALocationServiceDefaultPurpose @"Push to Location"
+#define kUALocationServiceSingleLocationDefaultTimeout 30.0
+
 NSString *const UALocationServiceBestAvailableSingleLocationKey = @"UABestAvailableLocation";
 
 @implementation UALocationService
@@ -54,6 +57,10 @@ NSString *const UALocationServiceBestAvailableSingleLocationKey = @"UABestAvaila
 
 #pragma mark -
 #pragma mark Object Lifecycle
+
++(void)initialize {
+    [self registerNSUserDefaults];
+}
 
 - (void)dealloc {
     self.delegate = nil;
@@ -340,6 +347,9 @@ didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
 // maximum, which is set on the provider as well
 - (void)significantChangeDidUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     [self reportLocationToAnalytics:newLocation fromProvider:significantChangeProvider_];
+    if ([delegate_ respondsToSelector:@selector(locationService:didUpdateToLocation:fromLocation:)]) {
+        [delegate_ locationService:self didUpdateToLocation:newLocation fromLocation:oldLocation];
+    }
 }
 
 #pragma mark -
@@ -596,15 +606,12 @@ didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
 #pragma mark -
 #pragma mark Class Methods
 
-+ (void)setObject:(id)object forLocationServiceKey:(UALocationServiceNSDefaultsKey*)key {
-    UALOG(@"Writing object %@ to user defaults for key %@", object, key);
++ (void)setObject:(id)object forLocationServiceKey:(UALocationServiceNSDefaultsKey *)key {
     [[NSUserDefaults standardUserDefaults] setObject:object forKey:key]; 
 }
 
-+(id)objectForLocationServiceKey:(UALocationServiceNSDefaultsKey *)key {
-    id object = [[NSUserDefaults standardUserDefaults] objectForKey:key];
-    UALOG(@"Returning object %@ from user defaults for key %@", object, key);
-    return object;
++ (id)objectForLocationServiceKey:(UALocationServiceNSDefaultsKey *)key {
+    return [[NSUserDefaults standardUserDefaults] objectForKey:key];
 }
 
 + (void)setBool:(BOOL)boolValue forLocationServiceKey:(UALocationServiceNSDefaultsKey*)key {
@@ -632,7 +639,7 @@ didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
     [UALocationService setBool:airshipLocationServiceEnabled forLocationServiceKey:UALocationServiceEnabledKey];
 }
 
-+ (BOOL) locationServiceAuthorized {
++ (BOOL)locationServiceAuthorized {
     if ([UALocationService useDeprecatedMethods]){
         UALOG(@"Using deprecated authorization methods");
         NSNumber *deprecatedAuthorization = [UALocationService objectForLocationServiceKey:UADeprecatedLocationAuthorizationKey];
@@ -650,16 +657,12 @@ didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
         CLAuthorizationStatus authorization = [CLLocationManager authorizationStatus];
         switch (authorization) {
             case kCLAuthorizationStatusNotDetermined:
-                UALOG(@"Location authorization kCLAuthorizationStatusNotDetermined");
                 return YES;
             case kCLAuthorizationStatusAuthorized:
-                UALOG(@"Location authorization kCLAuthorizationStatusAuthorized");
                 return YES;
             case kCLAuthorizationStatusDenied:
-                UALOG(@"Location authorization kCLAuthorizationStatusDenied");
                 return NO;
             case kCLAuthorizationStatusRestricted:
-                UALOG(@"Location authorization kCLAuthorizationStatusRestricted");
                 return NO;
             default:
                 UALOG(@"Unexpected value for authorization");
@@ -702,6 +705,24 @@ didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
     }
     NSError *error = [NSError errorWithDomain:UALocationServiceTimeoutError code:UALocationServiceTimedOut userInfo:userInfo];
     return error;
+}
+
+// Register the NSUserDefaults for the UALocationService
++ (void)registerNSUserDefaults {
+    NSMutableDictionary *defaultPreferences = [NSMutableDictionary dictionaryWithCapacity:3];
+    // UALocationService default values
+    [defaultPreferences setValue:[NSNumber numberWithBool:NO] forKey:UALocationServiceEnabledKey];
+    [defaultPreferences setValue:kUALocationServiceDefaultPurpose forKey:UALocationServicePurposeKey];
+    //kCLLocationAccuracyThreeKilometers works, since it is also a double, this may change in future
+    [defaultPreferences setValue:[NSNumber numberWithDouble:kCLLocationAccuracyThreeKilometers]
+                          forKey:UAStandardLocationDistanceFilterKey];
+    [defaultPreferences setValue:[NSNumber numberWithDouble:kCLLocationAccuracyThreeKilometers]
+                          forKey:UAStandardLocationDesiredAccuracyKey];
+    [defaultPreferences setValue:[NSNumber numberWithDouble:kCLLocationAccuracyHundredMeters]
+                          forKey:UASingleLocationDesiredAccuracyKey];
+    [defaultPreferences setValue:[NSNumber numberWithDouble:kUALocationServiceSingleLocationDefaultTimeout]
+                          forKey:UASingleLocationTimeoutKey];
+    [[NSUserDefaults standardUserDefaults] registerDefaults:defaultPreferences];
 }
 
 

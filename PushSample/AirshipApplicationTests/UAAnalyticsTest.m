@@ -226,7 +226,12 @@
 }
 
 - (void)testInvalidateBackgroundTask {
-    analytics.sendBackgroundTask = 5.0;
+    __block UIBackgroundTaskIdentifier identifier;
+    identifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [[UIApplication sharedApplication] endBackgroundTask:identifier];
+        identifier = UIBackgroundTaskInvalid;
+    }];
+    analytics.sendBackgroundTask = identifier;
     [analytics invalidateBackgroundTask];
     STAssertTrue(analytics.sendBackgroundTask == UIBackgroundTaskInvalid, nil);
 }
@@ -454,7 +459,7 @@
 
 // This test is not comprehensive for this method, as the method needs refactoring.
 - (void)testPrepareEventsForUpload {
-    UAEventAppForeground *appEvent = [[[UAEventAppForeground alloc] init] autorelease];
+    UAEventAppForeground *appEvent = [[[UAEventAppForeground alloc] initWithContext:nil] autorelease];
     // If the events database is empty, everything crashes
     STAssertNotNil(appEvent, nil);
     // Remember, the NSUserPreferences are in an unknown state in every test, so reset
